@@ -1,0 +1,43 @@
+{
+  "tipos": [
+    { "id": "T_SHIRT", "pt": "Camiseta", "frases": ["a t-shirt", "a short sleeve t-shirt", "a casual cotton tee"] },
+    { "id": "SHIRT", "pt": "Camisa", "frases": ["a button-up shirt", "a collared dress shirt", "a long sleeve button-down shirt"] },
+    { "id": "BLOUSE", "pt": "Blusa", "frases": ["a blouse", "a women's blouse with soft drape", "a lightweight feminine top"] },
+    { "id": "SWEATER", "pt": "Suéter ou tricô", "frases": ["a knit sweater", "a pullover jumper", "a cardigan"] },
+    { "id": "HOODIE", "pt": "Moletom", "frases": ["a hoodie", "a hooded sweatshirt", "a sweatshirt"] },
+    { "id": "PANTS", "pt": "Calça", "frases": ["a pair of pants", "trousers", "chino pants"] },
+    { "id": "JEANS", "pt": "Calça jeans", "frases": ["a pair of jeans", "denim jeans"] },
+    { "id": "SHORTS", "pt": "Shorts ou bermuda", "frases": ["a pair of shorts", "bermuda shorts"] },
+    { "id": "SKIRT", "pt": "Saia", "frases": ["a skirt", "a midi skirt"] },
+    { "id": "JACKET", "pt": "Jaqueta ou blazer", "frases": ["a jacket", "a blazer", "a bomber jacket"] },
+    { "id": "COAT", "pt": "Casaco longo", "frases": ["a long coat", "an overcoat", "a trench coat"] },
+    { "id": "VEST", "pt": "Colete", "frases": ["a sleeveless vest", "a waistcoat", "a puffer vest"] },
+    { "id": "DRESS", "pt": "Vestido", "frases": ["a dress", "a women's one piece dress"] },
+    { "id": "SHOES", "pt": "Sapato", "frases": ["a pair of dress shoes", "leather loafers", "high heel shoes"] },
+    { "id": "BOOTS", "pt": "Bota", "frases": ["a pair of boots", "ankle boots"] },
+    { "id": "SNEAKERS", "pt": "Tênis", "frases": ["a pair of sneakers", "athletic trainers"] },
+    { "id": "SANDALS", "pt": "Sandália ou chinelo", "frases": ["a pair of sandals", "flip flops"] },
+    { "id": "ACCESSORY", "pt": "Acessório", "frases": ["a fashion accessory", "a handbag", "a leather belt", "a necktie"] },
+    { "id": "HAT", "pt": "Chapéu ou boné", "frases": ["a hat", "a baseball cap", "a beanie"] },
+    { "id": "SCARF", "pt": "Cachecol ou lenço", "frases": ["a scarf", "a neck scarf"] }
+  ],
+  "estampas": [
+    { "id": "LISO", "pt": "Liso", "frases": ["a plain solid color garment", "solid color fabric with no pattern"] },
+    { "id": "LISTRADO", "pt": "Listrado", "frases": ["a striped garment", "fabric with stripes"] },
+    { "id": "XADREZ", "pt": "Xadrez", "frases": ["a plaid garment", "checked tartan fabric"] },
+    { "id": "FLORAL", "pt": "Floral", "frases": ["a floral print garment", "fabric with a flower pattern"] },
+    { "id": "POA", "pt": "Poá (bolinhas)", "frases": ["a polka dot garment", "fabric with polka dots"] },
+    { "id": "GRAFICO", "pt": "Estampa gráfica ou logo", "frases": ["a garment with a graphic print", "a printed logo or slogan on the fabric"] },
+    { "id": "ANIMAL", "pt": "Animal print", "frases": ["an animal print garment", "leopard print fabric"] },
+    { "id": "GEOMETRICO", "pt": "Geométrico ou abstrato", "frases": ["a geometric pattern garment", "fabric with an abstract print"] },
+    { "id": "CAMUFLADO", "pt": "Camuflado", "frases": ["a camouflage print garment", "military camo fabric"] }
+  ],
+  "estilos": [
+    { "id": "CASUAL", "pt": "Casual do dia a dia", "frases": ["casual everyday clothing", "a relaxed weekend outfit piece"] },
+    { "id": "ESPORTE", "pt": "Esportivo", "frases": ["sportswear for the gym", "athletic activewear"] },
+    { "id": "TRABALHO", "pt": "Trabalho", "frases": ["smart casual clothing for the office", "business casual workwear"] },
+    { "id": "FORMAL", "pt": "Social ou formal", "frases": ["formal business attire", "elegant formal wear for a ceremony"] },
+    { "id": "FESTA", "pt": "Festa ou noite", "frases": ["party wear for a night out", "glamorous evening wear"] },
+    { "id": "PRAIA", "pt": "Praia ou verão", "frases": ["beachwear", "summer resort clothing for the beach"] }
+  ]
+}

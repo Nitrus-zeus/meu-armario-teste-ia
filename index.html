@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Teste de IA | Meu Armário Cápsula</title>
+  <link rel="stylesheet" href="estilo.css">
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.webgpu.min.js" integrity="sha384-6BOUZhMpgaXRZBIj89pTWET0c7xcMe1yHACreuaBy2kUZwLd2tzCmv7MzwZccHYH" crossorigin="anonymous" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="sobretitulo">Meu Armário Cápsula</p>
+      <h1>Teste de reconhecimento de roupas</h1>
+      <p>Compara duas IAs abertas no seu celular. As fotos são analisadas aqui mesmo e não são enviadas a nenhum servidor.</p>
+    </header>
+
+    <div id="aviso-queda" class="aviso" role="alert" hidden></div>
+
+    <section aria-labelledby="titulo-fotos">
+      <h2 id="titulo-fotos"><span>1</span> Escolha as peças</h2>
+      <ul class="dicas">
+        <li>Use umas 10 peças variadas: roupas de cima e de baixo, calçados e um acessório.</li>
+        <li>Fotografe uma peça por vez, com fundo liso e boa luz.</li>
+      </ul>
+      <div class="acoes">
+        <label class="botao">
+          Tirar foto
+          <input id="camera" class="oculto" type="file" accept="image/*" capture="environment">
+        </label>
+        <label class="botao botao-secundario">
+          Escolher fotos
+          <input id="galeria" class="oculto" type="file" accept="image/*" multiple>
+        </label>
+      </div>
+      <button id="exemplos" class="link" type="button">Usar 4 fotos de exemplo, geradas por IA</button>
+      <p id="erro-fotos" class="erro" role="alert" hidden></p>
+      <div id="miniaturas" class="miniaturas"></div>
+    </section>
+
+    <section aria-labelledby="titulo-rodar">
+      <h2 id="titulo-rodar"><span>2</span> Rode a comparação</h2>
+      <p>Na primeira vez, o celular baixa cerca de <strong>90 MB</strong>. Prefira o Wi-Fi e mantenha esta página aberta.</p>
+      <fieldset>
+        <legend>Modelos</legend>
+        <label class="opcao"><input id="usar-pasma" type="checkbox" checked> Pasma (20 MB)</label>
+        <label class="opcao"><input id="usar-marqo" type="checkbox" checked> Marqo-FashionCLIP (60 MB)</label>
+      </fieldset>
+      <label class="campo">
+        Motor
+        <select id="motor">
+          <option value="auto">Automático: usa a placa gráfica, se der</option>
+          <option value="wasm">Só o processador</option>
+        </select>
+      </label>
+      <button id="rodar" class="botao botao-largo" type="button" disabled>Comparar as IAs</button>
+      <div id="progresso" class="progresso" hidden>
+        <p id="progresso-texto" role="status" aria-live="polite"></p>
+        <progress id="progresso-barra" max="1" value="0"></progress>
+      </div>
+      <p id="erro-rodar" class="erro" role="alert" hidden></p>
+    </section>
+
+    <section id="secao-conferir" aria-labelledby="titulo-conferir" hidden>
+      <h2 id="titulo-conferir"><span>3</span> Diga o que é cada peça</h2>
+      <p>Responda antes de ver as sugestões, para não se influenciar pela IA.</p>
+      <div id="cartoes" class="cartoes"></div>
+    </section>
+
+    <section id="secao-resultado" aria-labelledby="titulo-resultado" hidden>
+      <h2 id="titulo-resultado"><span>4</span> Resultado</h2>
+      <p id="resumo-base" class="suave"></p>
+      <div class="tabela-rolagem">
+        <table id="placar"></table>
+      </div>
+      <p class="suave">Com poucas fotos, uma diferença de 1 ou 2 acertos pode ser acaso.</p>
+      <button id="copiar" class="botao botao-largo" type="button">Copiar resultado</button>
+      <p id="copiar-status" class="suave" role="status"></p>
+      <p class="suave">Cole o resultado na conversa. Ele traz os números e o modelo do aparelho, sem nenhuma foto.</p>
+      <textarea id="resultado-json" rows="6" readonly hidden aria-label="Resultado em texto"></textarea>
+    </section>
+
+    <footer>
+      <p id="aparelho" class="suave"></p>
+      <p class="suave">Modelos: <a href="https://github.com/prikol5ist-art/Pasma" rel="noopener">Pasma</a> e <a href="https://github.com/marqo-ai/marqo-FashionCLIP" rel="noopener">Marqo-FashionCLIP</a>, ambos Apache-2.0.</p>
+    </footer>
+  </main>
+</body>
+</html>
