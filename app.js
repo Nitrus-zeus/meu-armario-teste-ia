@@ -29,6 +29,12 @@ const PALETA = [
   ['Rosa', 235, 150, 175], ['Rosa-claro', 245, 205, 215], ['Roxo', 100, 60, 140], ['Lilás', 190, 165, 215],
 ];
 
+// "Camisa" também é usado para camiseta no dia a dia. O menu deixa claro qual é qual.
+const ROTULOS_MENU = {
+  SHIRT: 'Camisa: com gola e botões',
+  T_SHIRT: 'Camiseta: sem botões',
+};
+
 const AVALIACOES = {
   cor: 'Cor (cálculo, sem IA)',
   material: 'Material (Pasma)',
@@ -66,7 +72,7 @@ function el(tag, atributos = {}, ...filhos) {
     else if (nome.startsWith('on')) elemento.addEventListener(nome.slice(2), valor);
     else if (valor !== false && valor != null) elemento.setAttribute(nome, valor === true ? '' : valor);
   }
-  elemento.append(...filhos.flat().filter((f) => f != null));
+  elemento.append(...filhos.flat(Infinity).filter((f) => f != null));
   return elemento;
 }
 
@@ -298,10 +304,62 @@ function rgbParaLab(r, g, b) {
   return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
 }
 
-const PALETA_LAB = PALETA.map(([nome, r, g, b]) => ({ nome, lab: rgbParaLab(r, g, b) }));
+const PALETA_LAB = PALETA.map(([nome, r, g, b]) => ({ nome, lab: rgbParaLab(r, g, b), css: `rgb(${r},${g},${b})` }));
 const distancia2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+// A claridade depende muito da luz da foto, então ela pesa menos que o tom na hora de dar nome à cor.
+const distanciaNome = (a, b) => ((a[0] - b[0]) * 0.5) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+const coresMaisProximas = (lab) => [...PALETA_LAB].sort((p, q) => distanciaNome(lab, p.lab) - distanciaNome(lab, q.lab));
 
-// Agrupa as cores da foto e descarta o grupo que domina as bordas, que costuma ser o fundo.
+function agruparCores(pontos, k) {
+  const ordenados = [...pontos].sort((p, q) => p.lab[0] - q.lab[0]);
+  let centros = Array.from({ length: k }, (_, i) => ordenados[Math.floor(((i + 0.5) / k) * ordenados.length)].lab);
+  let grupos = [];
+  for (let volta = 0; volta < 8; volta++) {
+    grupos = centros.map(() => ({ soma: [0, 0, 0], rgb: [0, 0, 0], n: 0, centro: 0, borda: 0 }));
+    for (const p of pontos) {
+      let melhor = 0;
+      for (let c = 1; c < k; c++) if (distancia2(p.lab, centros[c]) < distancia2(p.lab, centros[melhor])) melhor = c;
+      const g = grupos[melhor];
+      for (let d = 0; d < 3; d++) { g.soma[d] += p.lab[d]; g.rgb[d] += p.rgb[d]; }
+      g.n++;
+      if (p.centro) g.centro++;
+      if (p.borda) g.borda++;
+    }
+    centros = grupos.map((g, c) => (g.n ? g.soma.map((v) => v / g.n) : centros[c]));
+  }
+  return grupos.filter((g) => g.n).map((g) => ({
+    n: g.n,
+    centro: g.centro,
+    borda: g.borda,
+    lab: g.soma.map((v) => v / g.n),
+    rgb: g.rgb.map((v) => Math.round(v / g.n)),
+  }));
+}
+
+// Luz e sombra da mesma peça têm o mesmo tom e mudam só a claridade, então viram uma família só.
+function juntarLuzESombra(grupos) {
+  const familias = [];
+  for (const g of [...grupos].sort((p, q) => q.lab[0] - p.lab[0])) {
+    const familia = familias.find((f) => f.membros[0].lab[0] - g.lab[0] < 45
+      && Math.hypot(f.membros[0].lab[1] - g.lab[1], f.membros[0].lab[2] - g.lab[2]) < 6);
+    if (familia) familia.membros.push(g);
+    else familias.push({ membros: [g] });
+  }
+  return familias.map(({ membros }) => {
+    const n = membros.reduce((s, m) => s + m.n, 0);
+    // A parte iluminada, se não for um reflexo pequeno, mostra melhor a cor real da peça.
+    const principal = membros.find((m) => m.n >= n * 0.2) || membros[0];
+    return {
+      n,
+      lab: principal.lab,
+      rgb: principal.rgb,
+      centro: membros.reduce((s, m) => s + m.centro, 0),
+      borda: membros.reduce((s, m) => s + m.borda, 0),
+    };
+  });
+}
+
+// A peça costuma ocupar o centro da foto. O fundo também aparece ali às vezes, mas domina as bordas.
 function corDominante(imagem) {
   const escala = 96 / Math.max(imagem.naturalWidth, imagem.naturalHeight);
   const l = Math.max(8, Math.round(imagem.naturalWidth * escala));
@@ -312,40 +370,43 @@ function corDominante(imagem) {
   for (let y = 0; y < a; y++) {
     for (let x = 0; x < l; x++) {
       const i = (y * l + x) * 4;
-      const dx = (x - l / 2) / (l / 2);
-      const dy = (y - a / 2) / (a / 2);
       pontos.push({
         rgb: [pixels[i], pixels[i + 1], pixels[i + 2]],
         lab: rgbParaLab(pixels[i], pixels[i + 1], pixels[i + 2]),
-        peso: 1 - 0.7 * Math.min(1, (dx * dx + dy * dy) / 2),
+        centro: Math.abs(x - l / 2) < l / 4 && Math.abs(y - a / 2) < a / 4,
         borda: x < margem || y < margem || x >= l - margem || y >= a - margem,
       });
     }
   }
-  const ordenados = [...pontos].sort((p, q) => p.lab[0] - q.lab[0]);
-  const k = 4;
-  let centros = Array.from({ length: k }, (_, i) => ordenados[Math.floor(((i + 0.5) / k) * ordenados.length)].lab);
-  let grupos = [];
-  for (let volta = 0; volta < 8; volta++) {
-    grupos = centros.map(() => ({ soma: [0, 0, 0], rgb: [0, 0, 0], peso: 0, borda: 0 }));
-    for (const p of pontos) {
-      let melhor = 0;
-      for (let c = 1; c < k; c++) if (distancia2(p.lab, centros[c]) < distancia2(p.lab, centros[melhor])) melhor = c;
-      const g = grupos[melhor];
-      for (let d = 0; d < 3; d++) { g.soma[d] += p.lab[d] * p.peso; g.rgb[d] += p.rgb[d] * p.peso; }
-      g.peso += p.peso;
-      if (p.borda) g.borda++;
-    }
-    centros = grupos.map((g, c) => (g.peso ? g.soma.map((v) => v / g.peso) : centros[c]));
-  }
+  const totalCentro = pontos.filter((p) => p.centro).length;
   const totalBorda = pontos.filter((p) => p.borda).length;
-  const validos = grupos.filter((g) => g.peso > 0);
-  const semFundo = validos.filter((g) => g.borda / totalBorda < 0.25);
-  const escolhido = (semFundo.length ? semFundo : validos).sort((p, q) => q.peso - p.peso)[0];
-  const lab = escolhido.soma.map((v) => v / escolhido.peso);
-  const rgb = escolhido.rgb.map((v) => Math.round(v / escolhido.peso));
-  const nome = PALETA_LAB.reduce((m, c) => (distancia2(lab, c.lab) < distancia2(lab, m.lab) ? c : m)).nome;
-  return { nome, css: `rgb(${rgb.join(',')})` };
+  const familias = juntarLuzESombra(agruparCores(pontos, 5))
+    .map((f) => {
+      const fracCentro = f.centro / totalCentro;
+      const fracBorda = f.borda / totalBorda;
+      return { ...f, fracCentro, fracBorda, nota: fracCentro * (1 - 0.8 * fracBorda) };
+    })
+    .sort((p, q) => q.nota - p.nota);
+
+  const opcoes = [];
+  const incluir = (cor) => { if (!opcoes.some((o) => o.nome === cor.nome)) opcoes.push({ nome: cor.nome, css: cor.css }); };
+  const [primeiras, segunda] = [coresMaisProximas(familias[0].lab), familias[1] && coresMaisProximas(familias[1].lab)];
+  incluir(primeiras[0]);
+  incluir(primeiras[1]);
+  if (segunda) incluir(segunda[0]);
+  incluir(primeiras[2]);
+  return {
+    nome: opcoes[0].nome,
+    css: `rgb(${familias[0].rgb.join(',')})`,
+    opcoes: opcoes.slice(0, 3),
+    // Só números, sem a imagem. Permite entender um erro de cor sem ver a foto.
+    detalhes: familias.slice(0, 4).map((f) => ({
+      rgb: f.rgb,
+      area: Math.round((f.n / pontos.length) * 100),
+      centro: Math.round(f.fracCentro * 100),
+      borda: Math.round(f.fracBorda * 100),
+    })),
+  };
 }
 
 // ---------- Modelos ----------
@@ -723,6 +784,33 @@ function linhaExtra(foto, chave, conteudo, explicacao) {
     el('div', { class: 'avaliar', role: 'group', 'aria-label': AVALIACOES[chave] }, botao('certo', 'Certo'), botao('errado', 'Errado')));
 }
 
+function linhaCor(foto) {
+  const escolher = (nome) => {
+    const repetiu = foto.corEscolhida === nome;
+    foto.corEscolhida = repetiu ? undefined : nome;
+    if (repetiu) foto.avaliacoes.cor = undefined;
+    else if (nome === 'NENHUMA') foto.avaliacoes.cor = 'errado';
+    else foto.avaliacoes.cor = nome === foto.cor.nome ? 'certo' : 'alternativa';
+    desenharCartoes();
+    desenharPlacar();
+  };
+  return el('div', { class: 'extra' },
+    el('div', { class: 'extra-texto' }, el('strong', {}, AVALIACOES.cor), el('small', {}, 'Toque na cor real da peça')),
+    el('div', { class: 'avaliar', role: 'group', 'aria-label': 'Cor real da peça' },
+      foto.cor.opcoes.map((o) => el('button', {
+        type: 'button',
+        'data-valor': 'certo',
+        'aria-pressed': String(foto.corEscolhida === o.nome),
+        onclick: () => escolher(o.nome),
+      }, el('span', { class: 'amostra-cor', style: `background:${o.css}` }), o.nome)),
+      el('button', {
+        type: 'button',
+        'data-valor': 'errado',
+        'aria-pressed': String(foto.corEscolhida === 'NENHUMA'),
+        onclick: () => escolher('NENHUMA'),
+      }, 'Nenhuma')));
+}
+
 function desenharCartao(foto, indice) {
   const tipos = estado.meta.tiposLista;
   const seletor = el('select', {
@@ -730,13 +818,11 @@ function desenharCartao(foto, indice) {
     onchange: (e) => { foto.correto = e.target.value; desenharCartoes(); desenharPlacar(); },
   },
   el('option', { value: '' }, 'Escolha…'),
-  tipos.map((t) => el('option', { value: t.id }, t.pt)),
+  tipos.map((t) => el('option', { value: t.id }, ROTULOS_MENU[t.id] || t.pt)),
   el('option', { value: 'OUTRO' }, 'Outro: não está na lista'));
   seletor.value = foto.correto;
 
-  const extras = [
-    linhaExtra(foto, 'cor', el('span', {}, el('span', { class: 'amostra-cor', style: `background:${foto.cor.css}` }), foto.cor.nome)),
-  ];
+  const extras = [linhaCor(foto)];
   const pasma = foto.resultados.pasma;
   if (pasma) {
     extras.push(linhaExtra(foto, 'material',
@@ -797,14 +883,18 @@ function calcularPlacar() {
   }
   for (const chave of Object.keys(AVALIACOES)) {
     const notas = base.map((f) => f.avaliacoes[chave]).filter(Boolean);
-    placar.extras[chave] = { certos: notas.filter((n) => n === 'certo').length, respondidos: notas.length };
+    placar.extras[chave] = {
+      certos: notas.filter((n) => n === 'certo').length,
+      entreOpcoes: notas.filter((n) => n !== 'errado').length,
+      respondidos: notas.length,
+    };
   }
   return placar;
 }
 
 function montarResultado() {
   return {
-    versao: 1,
+    versao: 2,
     data: new Date().toISOString(),
     aparelho: {
       navegador: navigator.userAgent,
@@ -825,6 +915,9 @@ function montarResultado() {
       exemplo: f.exemplo,
       correto: f.correto,
       cor: f.cor.nome,
+      corOpcoes: f.cor.opcoes.map((o) => o.nome),
+      corEscolhida: f.corEscolhida,
+      corDetalhes: f.cor.detalhes,
       avaliacoes: f.avaliacoes,
       pasma: f.resultados.pasma && {
         top3: f.resultados.pasma.top3.map((t) => [t.id, +t.p.toFixed(4)]),
@@ -890,9 +983,14 @@ function desenharPlacar() {
       linha('Conferência de referência', textoVerificacao(ra), textoVerificacao(rb)),
       linha('Download do modelo', mb(MODELOS.pasma.bytes), mb(MODELOS.marqo.bytes)),
       extras.length ? el('tr', { class: 'subtitulo' }, el('th', { colspan: '3', scope: 'colgroup' }, 'Outras características')) : null,
-      extras.map(([chave, nome]) => el('tr', {},
-        el('th', { scope: 'row' }, nome),
-        el('td', { colspan: '2' }, textoAcerto(p.extras[chave].certos, p.extras[chave].respondidos))))));
+      extras.map(([chave, nome]) => [
+        el('tr', {},
+          el('th', { scope: 'row' }, chave === 'cor' ? 'Cor certa de primeira' : nome),
+          el('td', { colspan: '2' }, textoAcerto(p.extras[chave].certos, p.extras[chave].respondidos))),
+        chave === 'cor' ? el('tr', {},
+          el('th', { scope: 'row' }, 'Cor certa entre as opções'),
+          el('td', { colspan: '2' }, textoAcerto(p.extras.cor.entreOpcoes, p.extras.cor.respondidos))) : null,
+      ])));
 }
 
 async function copiarResultado() {

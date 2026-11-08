@@ -213,7 +213,7 @@ progress { width: 100%; height: 10px; accent-color: var(--destaque); }
   border-radius: 50%;
   vertical-align: -2px;
 }
-.avaliar { display: flex; gap: 6px; }
+.avaliar { display: flex; flex-wrap: wrap; gap: 6px; }
 .avaliar button {
   min-width: 68px;
   min-height: 44px;
